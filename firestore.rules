@@ -1,0 +1,251 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Hardened Global Primitives
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
+    }
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // 3. Schema Validation Helpers
+    function isValidUserPrivate(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() <= 254;
+    }
+
+    function isValidPublicProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+             data.age is int && data.age >= 18 && data.age <= 120 &&
+             data.city is string && data.city.size() <= 100 &&
+             data.bio is string && data.bio.size() <= 1000 &&
+             data.occupation is string && data.occupation.size() <= 120 &&
+             data.education is string && data.education.size() <= 120 &&
+             data.heightCm is int && data.heightCm >= 100 && data.heightCm <= 250 &&
+             data.zodiac is string && data.zodiac.size() <= 50 &&
+             data.lookingFor is string && data.lookingFor.size() <= 100 &&
+             data.photosJson is string && data.photosJson.size() <= 4000 &&
+             data.interestsJson is string && data.interestsJson.size() <= 2000 &&
+             data.lifestyleJson is string && data.lifestyleJson.size() <= 2000 &&
+             data.promptQuestion is string && data.promptQuestion.size() <= 300 &&
+             data.promptAnswer is string && data.promptAnswer.size() <= 1000 &&
+             data.isVerified is bool &&
+             data.isVip is bool &&
+             (data.latitude is float || data.latitude is int) &&
+             (data.longitude is float || data.longitude is int) &&
+             data.isOnline is bool &&
+             data.visibility is string && data.visibility.size() <= 20 && data.visibility == 'public';
+    }
+
+    function isValidMoment(data) {
+      return data.id is string && data.id.size() >= 1 && data.id.size() <= 128 &&
+             data.authorId is string && data.authorId.size() >= 1 && data.authorId.size() <= 128 &&
+             data.authorName is string && data.authorName.size() >= 1 && data.authorName.size() <= 100 &&
+             data.authorAvatar is string && data.authorAvatar.size() <= 2000 &&
+             data.mediaUri is string && data.mediaUri.size() <= 2000 &&
+             data.mediaType is string && data.mediaType.size() <= 20 && (data.mediaType == 'IMAGE' || data.mediaType == 'VIDEO') &&
+             data.caption is string && data.caption.size() <= 1000 &&
+             data.location is string && data.location.size() <= 200 &&
+             data.likesCount is int && data.likesCount >= 0 &&
+             data.visibility is string && data.visibility.size() <= 20 && data.visibility == 'public';
+    }
+
+    function isValidLike(data) {
+      return data.fromUid is string && data.fromUid.size() >= 1 && data.fromUid.size() <= 128 &&
+             data.fromUid == request.auth.uid &&
+             data.toUid is string && data.toUid.size() >= 1 && data.toUid.size() <= 128 &&
+             data.fromUid != data.toUid &&
+             data.isSuperLike is bool;
+    }
+
+    function isValidChatMessage(data) {
+      return data.channelId is string && data.channelId.size() >= 1 && data.channelId.size() <= 128 &&
+             data.senderId is string && data.senderId.size() >= 1 && data.senderId.size() <= 128 &&
+             data.senderId == request.auth.uid &&
+             data.participantIds is list && data.participantIds.size() == 2 &&
+             data.participantIds[0] is string && data.participantIds[0].size() <= 128 &&
+             data.participantIds[1] is string && data.participantIds[1].size() <= 128 &&
+             request.auth.uid in data.participantIds &&
+             data.text is string && data.text.size() <= 2000 &&
+             (!('mediaUri' in data) || data.mediaUri == null || (data.mediaUri is string && data.mediaUri.size() <= 2000)) &&
+             (!('mediaType' in data) || data.mediaType == null || (data.mediaType is string && data.mediaType.size() <= 20 && (data.mediaType == 'IMAGE' || data.mediaType == 'VIDEO')));
+    }
+
+    // Collection 1: /users/{userId} (Owner-Isolated PII)
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       isValidUserPrivate(incoming()) &&
+                       incoming().keys().hasAll(['userId', 'name', 'email', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['userId', 'name', 'email', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+
+      allow update: if (
+        isSignedIn() &&
+        isValidId(userId) &&
+        isValidUserPrivate(incoming()) &&
+        request.auth.uid == userId &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'email', 'updatedAt'])
+      );
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    // Collection 2: /public_profiles/{userId} (Public Dating Profiles without PII)
+    match /public_profiles/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (request.auth.uid == userId || existing().visibility == 'public');
+      allow list: if isSignedIn() && existing().visibility == 'public';
+
+      allow create: if isSignedIn() &&
+                       isValidId(userId) &&
+                       request.auth.uid == userId &&
+                       isValidPublicProfile(incoming()) &&
+                       incoming().keys().hasAll([
+                         'userId', 'name', 'age', 'city', 'bio', 'occupation', 'education',
+                         'heightCm', 'zodiac', 'lookingFor', 'photosJson', 'interestsJson',
+                         'lifestyleJson', 'promptQuestion', 'promptAnswer', 'isVerified',
+                         'isVip', 'latitude', 'longitude', 'isOnline', 'visibility',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'name', 'age', 'city', 'bio', 'occupation', 'education',
+                         'heightCm', 'zodiac', 'lookingFor', 'photosJson', 'interestsJson',
+                         'lifestyleJson', 'promptQuestion', 'promptAnswer', 'isVerified',
+                         'isVip', 'latitude', 'longitude', 'isOnline', 'visibility',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+
+      allow update: if (
+        isSignedIn() &&
+        isValidId(userId) &&
+        isValidPublicProfile(incoming()) &&
+        request.auth.uid == userId &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'age', 'city', 'bio', 'occupation', 'education',
+          'heightCm', 'zodiac', 'lookingFor', 'photosJson', 'interestsJson',
+          'lifestyleJson', 'promptQuestion', 'promptAnswer', 'isVerified',
+          'isVip', 'latitude', 'longitude', 'isOnline', 'visibility', 'updatedAt'
+        ])
+      );
+
+      allow delete: if isSignedIn() && isValidId(userId) && request.auth.uid == userId;
+    }
+
+    // Collection 3: /moments/{momentId} (Public Social Stories)
+    match /moments/{momentId} {
+      allow get: if isSignedIn() && isValidId(momentId) && (existing().authorId == request.auth.uid || existing().visibility == 'public');
+      allow list: if isSignedIn() && existing().visibility == 'public';
+
+      allow create: if isSignedIn() &&
+                       isValidId(momentId) &&
+                       isValidMoment(incoming()) &&
+                       incoming().id == momentId &&
+                       incoming().authorId == request.auth.uid &&
+                       incoming().keys().hasAll([
+                         'id', 'authorId', 'authorName', 'authorAvatar', 'mediaUri',
+                         'mediaType', 'caption', 'location', 'likesCount', 'visibility',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'id', 'authorId', 'authorName', 'authorAvatar', 'mediaUri',
+                         'mediaType', 'caption', 'location', 'likesCount', 'visibility',
+                         'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+
+      allow update: if (
+        isSignedIn() &&
+        isValidId(momentId) &&
+        isValidMoment(incoming()) &&
+        incoming().id == existing().id &&
+        incoming().authorId == existing().authorId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt is timestamp && incoming().updatedAt <= request.time && (
+          // Action 1: Author updates caption, location, or likes
+          (existing().authorId == request.auth.uid &&
+           incoming().diff(existing()).affectedKeys().hasOnly(['caption', 'location', 'likesCount', 'updatedAt'])) ||
+          // Action 2: Authenticated member toggles like count
+          incoming().diff(existing()).affectedKeys().hasOnly(['likesCount', 'updatedAt'])
+        )
+      );
+
+      allow delete: if isSignedIn() && isValidId(momentId) && existing().authorId == request.auth.uid;
+    }
+
+    // Collection 4: /likes/{likeId} (Directed User Likes)
+    match /likes/{likeId} {
+      allow get: if isSignedIn() && isValidId(likeId) && (existing().fromUid == request.auth.uid || existing().toUid == request.auth.uid);
+      allow list: if isSignedIn() && (existing().fromUid == request.auth.uid || existing().toUid == request.auth.uid);
+
+      allow create: if isSignedIn() &&
+                       isValidId(likeId) &&
+                       isValidLike(incoming()) &&
+                       incoming().keys().hasAll(['fromUid', 'toUid', 'isSuperLike', 'createdAt', 'updatedAt']) &&
+                       incoming().keys().hasOnly(['fromUid', 'toUid', 'isSuperLike', 'createdAt', 'updatedAt']) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time &&
+                       incoming().updatedAt is timestamp && incoming().updatedAt <= request.time;
+
+      allow update: if (
+        isSignedIn() &&
+        isValidId(likeId) &&
+        isValidLike(incoming()) &&
+        existing().fromUid == request.auth.uid &&
+        incoming().fromUid == existing().fromUid &&
+        incoming().toUid == existing().toUid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt is timestamp && incoming().updatedAt <= request.time &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['isSuperLike', 'updatedAt'])
+      );
+
+      allow delete: if isSignedIn() && isValidId(likeId) && existing().fromUid == request.auth.uid;
+    }
+
+    // Collection 5: /conversations/{channelId}/messages/{messageId} (Direct Chat Messages)
+    match /conversations/{channelId}/messages/{messageId} {
+      allow get: if isSignedIn() && isValidId(channelId) && isValidId(messageId) && request.auth.uid in existing().participantIds;
+      allow list: if isSignedIn() && request.auth.uid in existing().participantIds;
+
+      allow create: if isSignedIn() &&
+                       isValidId(channelId) &&
+                       isValidId(messageId) &&
+                       isValidChatMessage(incoming()) &&
+                       incoming().channelId == channelId &&
+                       incoming().keys().hasAll(['channelId', 'senderId', 'participantIds', 'text', 'createdAt']) &&
+                       incoming().keys().hasOnly(['channelId', 'senderId', 'participantIds', 'text', 'mediaUri', 'mediaType', 'createdAt']) &&
+                       incoming().createdAt is timestamp && incoming().createdAt <= request.time;
+
+      allow update, delete: if false;
+    }
+  }
+}

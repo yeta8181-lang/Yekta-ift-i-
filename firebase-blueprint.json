@@ -1,0 +1,325 @@
+{
+  "entities": {
+    "UserPrivate": {
+      "title": "UserPrivate",
+      "description": "Owner-isolated private user account record containing PII such as email.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the user."
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name of the user."
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "description": "Private email address of the user."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the private record was created (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the private record was last updated (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["userId", "name", "email", "createdAt", "updatedAt"]
+    },
+    "PublicProfile": {
+      "title": "PublicProfile",
+      "description": "Public dating profile visible to signed-in members without PII.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the profile owner."
+        },
+        "name": {
+          "type": "string",
+          "description": "Public display name."
+        },
+        "age": {
+          "type": "integer",
+          "description": "Age of the user (18-120)."
+        },
+        "city": {
+          "type": "string",
+          "description": "City or district name."
+        },
+        "bio": {
+          "type": "string",
+          "description": "Biography text."
+        },
+        "occupation": {
+          "type": "string",
+          "description": "Occupation title."
+        },
+        "education": {
+          "type": "string",
+          "description": "Education level or school."
+        },
+        "heightCm": {
+          "type": "integer",
+          "description": "Height in centimeters."
+        },
+        "zodiac": {
+          "type": "string",
+          "description": "Zodiac sign."
+        },
+        "lookingFor": {
+          "type": "string",
+          "description": "Relationship goal."
+        },
+        "photosJson": {
+          "type": "string",
+          "description": "Serialized list of photo URLs separated by |||."
+        },
+        "interestsJson": {
+          "type": "string",
+          "description": "Serialized list of interests separated by |||."
+        },
+        "lifestyleJson": {
+          "type": "string",
+          "description": "Serialized list of lifestyle tags separated by |||."
+        },
+        "promptQuestion": {
+          "type": "string",
+          "description": "Profile icebreaker question."
+        },
+        "promptAnswer": {
+          "type": "string",
+          "description": "Profile icebreaker answer."
+        },
+        "isVerified": {
+          "type": "boolean",
+          "description": "Whether the user completed selfie verification."
+        },
+        "isVip": {
+          "type": "boolean",
+          "description": "Whether the user has active VIP membership."
+        },
+        "latitude": {
+          "type": "number",
+          "description": "Approximate latitude for nearby discovery."
+        },
+        "longitude": {
+          "type": "number",
+          "description": "Approximate longitude for nearby discovery."
+        },
+        "isOnline": {
+          "type": "boolean",
+          "description": "Online presence status."
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "description": "Visibility scope required for list queries."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "userId",
+        "name",
+        "age",
+        "city",
+        "bio",
+        "occupation",
+        "education",
+        "heightCm",
+        "zodiac",
+        "lookingFor",
+        "photosJson",
+        "interestsJson",
+        "lifestyleJson",
+        "promptQuestion",
+        "promptAnswer",
+        "isVerified",
+        "isVip",
+        "latitude",
+        "longitude",
+        "isOnline",
+        "visibility",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Moment": {
+      "title": "Moment",
+      "description": "Social story / photo moment shared by an authenticated user.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique moment document ID."
+        },
+        "authorId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the author."
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Display name of the author."
+        },
+        "authorAvatar": {
+          "type": "string",
+          "description": "Avatar URL of the author."
+        },
+        "mediaUri": {
+          "type": "string",
+          "description": "Media URI for the moment."
+        },
+        "mediaType": {
+          "type": "string",
+          "enum": ["IMAGE", "VIDEO"],
+          "description": "Type of media shared."
+        },
+        "caption": {
+          "type": "string",
+          "description": "Moment caption."
+        },
+        "location": {
+          "type": "string",
+          "description": "Location tag for the moment."
+        },
+        "likesCount": {
+          "type": "integer",
+          "description": "Number of likes on the moment."
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"],
+          "description": "Visibility filter for moments list queries."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": [
+        "id",
+        "authorId",
+        "authorName",
+        "authorAvatar",
+        "mediaUri",
+        "mediaType",
+        "caption",
+        "location",
+        "likesCount",
+        "visibility",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Like": {
+      "title": "Like",
+      "description": "Directed like or super-like interaction from one user to another.",
+      "type": "object",
+      "properties": {
+        "fromUid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the sender."
+        },
+        "toUid": {
+          "type": "string",
+          "description": "Firebase Auth UID of the recipient."
+        },
+        "isSuperLike": {
+          "type": "boolean",
+          "description": "Whether this interaction is a Super Like."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp (FieldValue.serverTimestamp())."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server update timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["fromUid", "toUid", "isSuperLike", "createdAt", "updatedAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "Direct message inside a two-party conversation channel.",
+      "type": "object",
+      "properties": {
+        "channelId": {
+          "type": "string",
+          "description": "Deterministic channel ID."
+        },
+        "senderId": {
+          "type": "string",
+          "description": "Firebase Auth UID of the message author."
+        },
+        "participantIds": {
+          "type": "array",
+          "description": "Two-element list of participant UIDs for flat authorization evaluation."
+        },
+        "text": {
+          "type": "string",
+          "description": "Message text content."
+        },
+        "mediaUri": {
+          "type": "string",
+          "description": "Optional attached media URI."
+        },
+        "mediaType": {
+          "type": "string",
+          "enum": ["IMAGE", "VIDEO"],
+          "description": "Optional attached media type."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server creation timestamp (FieldValue.serverTimestamp())."
+        }
+      },
+      "required": ["channelId", "senderId", "participantIds", "text", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserPrivate" },
+      "description": "Owner-only private user account documents storing PII."
+    },
+    "/public_profiles/{userId}": {
+      "schema": { "$ref": "#/entities/PublicProfile" },
+      "description": "Publicly discoverable dating profiles without PII."
+    },
+    "/moments/{momentId}": {
+      "schema": { "$ref": "#/entities/Moment" },
+      "description": "Publicly visible social moments shared by users."
+    },
+    "/likes/{likeId}": {
+      "schema": { "$ref": "#/entities/Like" },
+      "description": "User-to-user likes and super-likes restricted to sender and recipient."
+    },
+    "/conversations/{channelId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/ChatMessage" },
+      "description": "Conversation messages isolated to channel participant UIDs."
+    }
+  }
+}

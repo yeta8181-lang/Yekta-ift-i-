@@ -1,0 +1,43 @@
+{
+  "package_name": "com.aistudio.kalpkalbe.edyjgs",
+  "app_name": "Kalp Kalbe",
+  "billing_version": "8.0.0",
+  "subscriptions": [
+    {
+      "product_id": "vip_weekly_25tl",
+      "base_plan_id": "weekly-base",
+      "product_type": "subs",
+      "title": "Haftalık VIP Başlangıç",
+      "price_try": "25,00 ₺",
+      "billing_period": "P1W",
+      "description": "7 gün boyunca sınırsız sohbet, keşfette paylaşım ve 100 km radar."
+    },
+    {
+      "product_id": "vip_monthly_50tl",
+      "base_plan_id": "monthly-base",
+      "product_type": "subs",
+      "title": "Aylık VIP Üyelik",
+      "price_try": "50,00 ₺",
+      "billing_period": "P1M",
+      "description": "Tüm sohbet özellikleri, keşfet/anlar paylaşımı ve sınırsız kaydırma."
+    },
+    {
+      "product_id": "vip_yearly_399tl",
+      "base_plan_id": "yearly-base",
+      "product_type": "subs",
+      "title": "Yıllık VIP Avantaj",
+      "price_try": "399,00 ₺",
+      "billing_period": "P1Y",
+      "description": "Yıl boyu kesintisiz VIP sohbet, keşfet paylaşımı ve öncelikli profil gösterimi."
+    }
+  ],
+  "in_app_products": [
+    {
+      "product_id": "vip_lifetime_499tl",
+      "product_type": "inapp",
+      "title": "Ömür Boyu VIP Üyelik",
+      "price_try": "499,00 ₺",
+      "description": "Tek seferlik ödeme ile kalıcı VIP sohbet, keşfet paylaşımı ve 100 km radar."
+    }
+  ]
+}
